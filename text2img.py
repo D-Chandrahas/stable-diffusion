@@ -18,6 +18,7 @@ from transformers import logging
 from realesrgan import RealESRGANer
 from gfpgan import GFPGANer
 from basicsr.archs.rrdbnet_arch import RRDBNet
+from basicsr.utils import imwrite
 logging.set_verbosity_error()
 
 def arguments():
@@ -157,42 +158,45 @@ def arguments():
 
 def make_folders(args):
 
+    os.makedirs(args.outdir, exist_ok=True)
+
     if not args.from_file:
         prompts = [args.prompt]
     else:
         with open(args.from_file, "r") as f:
             prompts = f.read().splitlines()
 
-    sample_paths = []
+    prompt_paths = []
 
     for prompt in prompts:
         folder_base_count = 0
         ## make sure different prompts are stored in different folders
         base_path = os.path.join(args.outdir, "_".join(re.split(":| ", prompt)))[:100] ## changed folder name size limit from 150 to 100
-        sample_path = base_path
-        while(os.path.exists(sample_path)):
-            with open(os.path.join(sample_path, "prompt.txt"),'r') as f:
+        prompt_path = base_path
+        while(os.path.exists(prompt_path)):
+            with open(os.path.join(prompt_path, "prompt.txt"),'r') as f:
                 if(f.read() == prompt):
                     break
                 else:
                     folder_base_count += 1
-                    sample_path = base_path + "_" + str(folder_base_count)
+                    prompt_path = base_path + "_" + str(folder_base_count)
         ##
 
-        os.makedirs(sample_path, exist_ok=True)
+        os.makedirs(prompt_path, exist_ok=True)
 
         ## store the prompt in file
-        with open(os.path.join(sample_path, "prompt.txt"),'w') as f:
+        with open(os.path.join(prompt_path, "prompt.txt"),'w') as f:
             f.write(prompt)
         ##
-        sample_paths.append(sample_path)
+        prompt_paths.append(prompt_path)
     
-    return sample_paths
+    return prompt_paths
 
-def save_img(image,sample_path,seed):
-    base_count = len(os.listdir(sample_path))
-    while os.path.exists(os.path.join(sample_path, "seed_" + str(opt.seed) + "_" + f"{base_count:05}.png")):
+def save_img(image,prompt_path,seed):
+    base_count = len(os.listdir(prompt_path))
+    while os.path.exists(os.path.join(prompt_path, f"seed_{str(seed)}_{base_count:05}.png")):
         base_count += 1
+    imwrite(image,os.path.join(prompt_path, f"seed_{str(seed)}_{base_count:05}.png"))
 
 
 def chunk(it, size):
@@ -209,19 +213,15 @@ def load_model_from_config(ckpt, verbose=False):
     return sd
 
 def optimised_txt2img(opt):
-    # Credits: https://github.com/basujindal
+    # Credit: https://github.com/basujindal
 
     config = "optimizedSD/v1-inference.yaml"
     ckpt = "models/ldm/stable-diffusion-v1/model.ckpt"
 
 
-
     tic = time.time()
-    os.makedirs(opt.outdir, exist_ok=True)
-    outpath = opt.outdir
 
-    if opt.seed == None:
-        opt.seed = randint(0, 1000000)
+    
     seed_everything(opt.seed)
 
     # Logging
@@ -348,19 +348,14 @@ def optimised_txt2img(opt):
                         x_sample = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
                         x_sample = 255.0 * rearrange(x_sample[0].cpu().numpy(), "c h w -> h w c")
 
-                        #----------------------------------------#put this in a function and save all images in a 2d list
+                        #----------------------------------------#
+                        # convert all images to format accepted by the GANs and save them in a 3d list(all_images)
 
-                        ## make sure images are never overwritten
-                        while os.path.exists(os.path.join(sample_path, "seed_" + str(opt.seed) + "_" + f"{base_count:05}.png")):
-                            base_count += 1
-                        ##
-
-                        Image.fromarray(x_sample.astype(np.uint8)).save(
-                            os.path.join(sample_path, "seed_" + str(opt.seed) + "_" + f"{base_count:05}.png")
-                        )
+                        # Image.fromarray(x_sample.astype(np.uint8)).save(
+                        #     os.path.join(sample_path, "seed_" + str(opt.seed) + "_" + f"{base_count:05}.png")
+                        # )
                         seeds += str(opt.seed) + ","
                         opt.seed += 1
-                        base_count += 1
 
                         #--------------------------------------#
 
@@ -379,17 +374,22 @@ def optimised_txt2img(opt):
     print(
         (
             f"Samples finished in {time_taken:.2f} minutes and exported to "
-            + sample_path
+            + prompt_path
             + "\n Seeds used = "
             + seeds[:-1]
         )
     )
+    return all_images
 
 
 if __name__ == "__main__":
     args = arguments()
 
-    sample_paths = make_folders(args)
+    if args.seed == None:
+        args.seed = randint(0, 1000000)
+    seed = args.seed
+
+    prompt_paths = make_folders(args)
 
     all_images = optimised_txt2img(args)
 
@@ -435,18 +435,24 @@ if __name__ == "__main__":
         GFPGAN = None
 
     if(args.enhance_face):
-        for sample_path,prompt_images in zip(sample_paths,all_images):
-            for image in prompt_images:
-                _, _, output = GFPGAN.enhance(image, has_aligned=False, only_center_face=False, paste_back=True)
-                save_img(output,sample_path)
+        for iter_images in all_images:
+            for prompt_path,prompt_images in zip(prompt_paths,iter_images):
+                for image in prompt_images:
+                    _, _, output = GFPGAN.enhance(image, has_aligned=False, only_center_face=False, paste_back=True)
+                    save_img(output,prompt_path,seed)
+                    seed += 1
 
     elif(args.enhance_image):
-        for sample_path,prompt_images in zip(sample_paths,all_images):
-            for image in prompt_images:
-                output, _ = RealESRGAN.enhance(image, outscale=args.upscale)
-                save_img(output,sample_path)
+        for iter_images in all_images:
+            for prompt_path,prompt_images in zip(prompt_paths,iter_images):
+                for image in prompt_images:
+                    output, _ = RealESRGAN.enhance(image, outscale=args.upscale)
+                    save_img(output,prompt_path,seed)
+                    seed += 1
 
     else:
-        for sample_path,prompt_images in zip(sample_paths,all_images):
-            for image in prompt_images:
-                save_img(image,sample_path)
+        for iter_images in all_images:
+            for prompt_path,prompt_images in zip(prompt_paths,iter_images):
+                for image in prompt_images:
+                    save_img(image,prompt_path,seed)
+                    seed += 1
