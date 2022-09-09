@@ -155,6 +155,46 @@ def arguments():
 
     return parser.parse_args()
 
+def make_folders(args):
+
+    if not args.from_file:
+        prompts = [args.prompt]
+    else:
+        with open(args.from_file, "r") as f:
+            prompts = f.read().splitlines()
+
+    sample_paths = []
+
+    for prompt in prompts:
+        folder_base_count = 0
+        ## make sure different prompts are stored in different folders
+        base_path = os.path.join(args.outdir, "_".join(re.split(":| ", prompt)))[:100] ## changed folder name size limit from 150 to 100
+        sample_path = base_path
+        while(os.path.exists(sample_path)):
+            with open(os.path.join(sample_path, "prompt.txt"),'r') as f:
+                if(f.read() == prompt):
+                    break
+                else:
+                    folder_base_count += 1
+                    sample_path = base_path + "_" + str(folder_base_count)
+        ##
+
+        os.makedirs(sample_path, exist_ok=True)
+
+        ## store the prompt in file
+        with open(os.path.join(sample_path, "prompt.txt"),'w') as f:
+            f.write(prompt)
+        ##
+        sample_paths.append(sample_path)
+    
+    return sample_paths
+
+def save_img(image,sample_path,seed):
+    base_count = len(os.listdir(sample_path))
+    while os.path.exists(os.path.join(sample_path, "seed_" + str(opt.seed) + "_" + f"{base_count:05}.png")):
+        base_count += 1
+
+
 def chunk(it, size):
     it = iter(it)
     return iter(lambda: tuple(islice(it, size)), ())
@@ -252,31 +292,8 @@ def optimised_txt2img(opt):
     seeds = ""
     with torch.no_grad():
         
-        for n in trange(opt.n_iter, desc="Sampling"):
+        for _ in trange(opt.n_iter, desc="Sampling"):
             for prompts in tqdm(data, desc="data"):
-
-                folder_base_count = 0
-
-                ## make sure different prompts are stored in different folders
-                base_path = os.path.join(outpath, "_".join(re.split(":| ", prompts[0])))[:100] ## changed folder name size limit from 150 to 100
-                sample_path = base_path
-                while(os.path.exists(sample_path)):
-                    with open(os.path.join(sample_path, "prompt.txt"),'r') as f:
-                        if(f.read() == prompts[0]):
-                            break
-                        else:
-                            folder_base_count += 1
-                            sample_path = base_path + "_" + str(folder_base_count)
-                ##
-
-                os.makedirs(sample_path, exist_ok=True)
-
-                ## store the prompt in file
-                with open(os.path.join(sample_path, "prompt.txt"),'w') as f:
-                    f.write(prompts[0])
-                ##
-
-                base_count = len(os.listdir(sample_path))
 
 
                 with precision_scope("cuda"):
@@ -331,6 +348,8 @@ def optimised_txt2img(opt):
                         x_sample = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
                         x_sample = 255.0 * rearrange(x_sample[0].cpu().numpy(), "c h w -> h w c")
 
+                        #----------------------------------------#put this in a function and save all images in a 2d list
+
                         ## make sure images are never overwritten
                         while os.path.exists(os.path.join(sample_path, "seed_" + str(opt.seed) + "_" + f"{base_count:05}.png")):
                             base_count += 1
@@ -342,6 +361,8 @@ def optimised_txt2img(opt):
                         seeds += str(opt.seed) + ","
                         opt.seed += 1
                         base_count += 1
+
+                        #--------------------------------------#
 
                     if opt.device != "cpu":
                         mem = torch.cuda.memory_allocated() / 1e6
@@ -357,18 +378,20 @@ def optimised_txt2img(opt):
 
     print(
         (
-            "Samples finished in {0:.2f} minutes and exported to "
+            f"Samples finished in {time_taken:.2f} minutes and exported to "
             + sample_path
             + "\n Seeds used = "
             + seeds[:-1]
-        ).format(time_taken)
+        )
     )
 
 
 if __name__ == "__main__":
     args = arguments()
 
-    optimised_txt2img(args)
+    sample_paths = make_folders(args)
+
+    all_images = optimised_txt2img(args)
 
     if(args.enhance_image):
 
@@ -412,27 +435,18 @@ if __name__ == "__main__":
         GFPGAN = None
 
     if(args.enhance_face):
-        if not args.from_file:
-            prompts = [args.prompt]
-        else:
-            with open(args.from_file, "r") as f:
-                prompts = f.read().splitlines()
-
-        for prompt in prompts:
-            prompt_path = os.path.join(args.outdir, "_".join(re.split(":| ", prompt)))[:250]
-            # for img in prompt_path:
-            #     _, _, output = GFPGAN.enhance(img, has_aligned=False, only_center_face=False, paste_back=True)
-            #     save(output)
+        for sample_path,prompt_images in zip(sample_paths,all_images):
+            for image in prompt_images:
+                _, _, output = GFPGAN.enhance(image, has_aligned=False, only_center_face=False, paste_back=True)
+                save_img(output,sample_path)
 
     elif(args.enhance_image):
-        if not args.from_file:
-            prompts = [args.prompt]
-        else:
-            with open(args.from_file, "r") as f:
-                prompts = f.read().splitlines()
+        for sample_path,prompt_images in zip(sample_paths,all_images):
+            for image in prompt_images:
+                output, _ = RealESRGAN.enhance(image, outscale=args.upscale)
+                save_img(output,sample_path)
 
-        for prompt in prompts:
-            prompt_path = os.path.join(args.outdir, "_".join(re.split(":| ", prompt)))[:250]
-            # for img in prompt_path:
-            #     output, _ = RealESRGAN.enhance(img, outscale=args.upscale)
-            #     save(output)
+    else:
+        for sample_path,prompt_images in zip(sample_paths,all_images):
+            for image in prompt_images:
+                save_img(image,sample_path)
