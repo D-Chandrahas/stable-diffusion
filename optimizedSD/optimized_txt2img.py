@@ -236,7 +236,20 @@ def optimised_txt2img(opt):
         for n in trange(opt.n_iter, desc="Sampling"):
             for prompts in tqdm(data, desc="data"):
 
-                sample_path = os.path.join(outpath, "_".join(re.split(":| ", prompts[0])))[:100] ## changed folder name size limit from 150 to 100
+                folder_base_count = 0
+
+                ## make sure different prompts are stored in different folders
+                base_path = os.path.join(outpath, "_".join(re.split(":| ", prompts[0])))[:100] ## changed folder name size limit from 150 to 100
+                sample_path = base_path
+                while(os.path.exists(sample_path)):
+                    with open(os.path.join(sample_path, "prompt.txt"),'r') as f:
+                        if(f.read() == prompts[0]):
+                            break
+                        else:
+                            folder_base_count += 1
+                            sample_path = base_path + "_" + str(folder_base_count)
+                ##
+
                 os.makedirs(sample_path, exist_ok=True)
 
                 ## store the prompt in file
