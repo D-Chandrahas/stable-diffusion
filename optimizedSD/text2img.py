@@ -18,7 +18,7 @@ from transformers import logging
 from realesrgan import RealESRGANer
 from gfpgan import GFPGANer
 from basicsr.archs.rrdbnet_arch import RRDBNet
-from basicsr.utils import imwrite
+from cv2 import imwrite,cvtColor,COLOR_RGB2BGR
 logging.set_verbosity_error()
 
 def arguments():
@@ -196,7 +196,7 @@ def save_img(image,prompt_path,seed):
     base_count = len(os.listdir(prompt_path))
     while os.path.exists(os.path.join(prompt_path, f"seed_{str(seed)}_{base_count:05}.png")):
         base_count += 1
-    imwrite(image,os.path.join(prompt_path, f"seed_{str(seed)}_{base_count:05}.png"))
+    imwrite(os.path.join(prompt_path, f"seed_{str(seed)}_{base_count:05}.png"),image)
 
 
 def chunk(it, size):
@@ -345,15 +345,14 @@ def optimised_txt2img(opt):
 
                     modelFS.to(opt.device)
 
-                    print(samples_ddim.shape)
-                    print("saving images")
+                    # print(samples_ddim.shape)
                     m=0
                     for i in range(batch_size):
 
                         x_samples_ddim = modelFS.decode_first_stage(samples_ddim[i].unsqueeze(0))
                         x_sample = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
                         x_sample = 255.0 * rearrange(x_sample[0].cpu().numpy(), "c h w -> h w c")
-                        x_sample = x_sample.astype(np.uint8)
+                        x_sample = cvtColor(x_sample.astype(np.uint8),COLOR_RGB2BGR)
                         all_images[k][l][m] = x_sample
                         
                         #----------------------------------------#
@@ -383,14 +382,13 @@ def optimised_txt2img(opt):
 
     time_taken = (toc - tic) / 60.0
 
-    # print(
-    #     (
-    #         f"Samples finished in {time_taken:.2f} minutes and exported to "
-    #         + prompt_path
-    #         + "\n Seeds used = "
-    #         + seeds[:-1]
-    #     )
-    # )
+    print(
+        (
+            f"\nSamples finished in {time_taken:.2f} minutes"
+            + "\n Seeds used = "
+            + seeds[:-1]
+        )
+    )
     return all_images
 
 
@@ -428,8 +426,7 @@ if __name__ == "__main__":
             tile=400,
             tile_pad=10,
             pre_pad=0,
-            half=not args.fp32,
-            gpu_id=args.device[5]
+            half=not args.fp32
         )
     else:
         RealESRGAN = None
