@@ -271,15 +271,18 @@ def optimised_txt2img(opt):
 
 
     batch_size = opt.n_samples
+    prompts_no = 0
     if not opt.from_file:
-        prompt = opt.prompt
         assert prompt is not None
+        prompt = opt.prompt
+        prompts_no = 1
         data = [batch_size * [prompt]]
 
     else:
         print(f"reading prompts from {opt.from_file}")
         with open(opt.from_file, "r") as f:
             data = f.read().splitlines()
+            prompts_no = len(data)
             data = batch_size * list(data)
             data = list(chunk(sorted(data), batch_size))
 
@@ -290,9 +293,11 @@ def optimised_txt2img(opt):
         precision_scope = nullcontext
 
     seeds = ""
+    all_images = [[[0 for _ in range(opt.n_samples)] for _ in range(prompts_no)] for _ in range(opt.n_iter)]
     with torch.no_grad():
-        
+        k=0
         for _ in trange(opt.n_iter, desc="Sampling"):
+            l=0
             for prompts in tqdm(data, desc="data"):
 
 
@@ -342,12 +347,14 @@ def optimised_txt2img(opt):
 
                     print(samples_ddim.shape)
                     print("saving images")
+                    m=0
                     for i in range(batch_size):
 
                         x_samples_ddim = modelFS.decode_first_stage(samples_ddim[i].unsqueeze(0))
                         x_sample = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
                         x_sample = 255.0 * rearrange(x_sample[0].cpu().numpy(), "c h w -> h w c")
-
+                        all_images[k,l,m] = x_sample
+                        
                         #----------------------------------------#
                         # convert all images to format accepted by the GANs and save them in a 3d list(all_images)
 
@@ -358,6 +365,7 @@ def optimised_txt2img(opt):
                         opt.seed += 1
 
                         #--------------------------------------#
+                        m += 1
 
                     if opt.device != "cpu":
                         mem = torch.cuda.memory_allocated() / 1e6
@@ -366,6 +374,9 @@ def optimised_txt2img(opt):
                             time.sleep(1)
                     del samples_ddim
                     print("memory_final = ", torch.cuda.memory_allocated() / 1e6)
+                l += 1
+            k += 1
+            
 
     toc = time.time()
 
