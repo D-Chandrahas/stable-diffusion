@@ -168,14 +168,8 @@ cython_debug/
 # logs
 /logs/
 
-# weights checkpoint
+# SD weights checkpoint
 /models/ldm/stable-diffusion-v1/
 
-# log of changes i made
-/MyChanges.txt
-
-# todo
-/todo.txt
-
-#gfpgan downloaded weights
+# gfpgan downloaded weights
 /gfpgan/
