@@ -12,7 +12,7 @@ from pytorch_lightning import seed_everything
 from torch import autocast
 from contextlib import contextmanager, nullcontext
 from ldm.util import instantiate_from_config
-from optimizedSD.optimUtils import split_weighted_subprompts, logger
+from optimUtils import split_weighted_subprompts, logger
 from transformers import logging
 # from samplers import CompVisDenoiser
 from realesrgan import RealESRGANer
@@ -273,8 +273,8 @@ def optimised_txt2img(opt):
     batch_size = opt.n_samples
     prompts_no = 0
     if not opt.from_file:
-        assert prompt is not None
         prompt = opt.prompt
+        assert prompt is not None
         prompts_no = 1
         data = [batch_size * [prompt]]
 
@@ -353,7 +353,8 @@ def optimised_txt2img(opt):
                         x_samples_ddim = modelFS.decode_first_stage(samples_ddim[i].unsqueeze(0))
                         x_sample = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
                         x_sample = 255.0 * rearrange(x_sample[0].cpu().numpy(), "c h w -> h w c")
-                        all_images[k,l,m] = x_sample
+                        x_sample = x_sample.astype(np.uint8)
+                        all_images[k][l][m] = x_sample
                         
                         #----------------------------------------#
                         # convert all images to format accepted by the GANs and save them in a 3d list(all_images)
@@ -382,14 +383,14 @@ def optimised_txt2img(opt):
 
     time_taken = (toc - tic) / 60.0
 
-    print(
-        (
-            f"Samples finished in {time_taken:.2f} minutes and exported to "
-            + prompt_path
-            + "\n Seeds used = "
-            + seeds[:-1]
-        )
-    )
+    # print(
+    #     (
+    #         f"Samples finished in {time_taken:.2f} minutes and exported to "
+    #         + prompt_path
+    #         + "\n Seeds used = "
+    #         + seeds[:-1]
+    #     )
+    # )
     return all_images
 
 
