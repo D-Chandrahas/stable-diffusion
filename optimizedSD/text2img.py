@@ -218,9 +218,6 @@ def optimised_txt2img(opt):
     config = "optimizedSD/v1-inference.yaml"
     ckpt = "models/ldm/stable-diffusion-v1/model.ckpt"
 
-
-    tic = time.time()
-
     
     seed_everything(opt.seed)
 
@@ -378,21 +375,16 @@ def optimised_txt2img(opt):
             k += 1
             
 
-    toc = time.time()
+    
 
-    time_taken = (toc - tic) / 60.0
-
-    print(
-        (
-            f"\nSamples finished in {time_taken:.2f} minutes"
-            + "\n Seeds used = "
-            + seeds[:-1]
-        )
-    )
+    
     return all_images
 
 
 if __name__ == "__main__":
+    
+    tic = time.time()
+
     args = arguments()
 
     if args.seed == None:
@@ -465,3 +457,9 @@ if __name__ == "__main__":
                 for image in prompt_images:
                     save_img(image,prompt_path,seed)
                     seed += 1
+
+    toc = time.time()
+
+    time_taken = (toc - tic) / 60.0
+
+    print(f"\nSamples finished in {time_taken:.2f} minutes")
