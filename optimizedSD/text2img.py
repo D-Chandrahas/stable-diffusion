@@ -25,9 +25,9 @@ def arguments():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        "--prompt", type=str, nargs="?", default="a painting of a virus monster playing guitar", help="the prompt to render"
+        "--prompt", type=str, default="a painting of a virus monster playing guitar", help="the prompt to render"
     )
-    parser.add_argument("--outdir", type=str, nargs="?", help="dir to write results to (Default: outputs)", default="outputs")
+    parser.add_argument("--outdir", type=str, help="dir to write results to (Default: outputs)", default="outputs")
     parser.add_argument(
         "--ddim_steps",
         type=int,
@@ -38,7 +38,7 @@ def arguments():
         "--ddim_eta",
         type=float,
         default=0.0,
-        help="ddim eta (eta=0.0 corresponds to deterministic sampling"
+        help="ddim eta (eta=0.0 corresponds to deterministic sampling)"
     )
     parser.add_argument(
         "--n_iter",
@@ -85,8 +85,8 @@ def arguments():
     parser.add_argument(
         "--device",
         type=str,
-        default="cuda:0",
-        help="specify GPU (cuda:0/cuda:1/...) (Default: cuda:0)"
+        default="cuda",
+        help="specify GPU (cuda/cuda:0/cuda:1/...) (Default: cuda)"
     )
     parser.add_argument(
         "--from_file", ## previously called --from-file
@@ -147,10 +147,8 @@ def arguments():
     parser.add_argument(
         '--upscale',
         type=int,
-        nargs="?",
         choices=[2,4],
         default=2,
-        const=2,
         help='The final upsampling scale of the image. Default: 2'
     )
 
