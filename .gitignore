@@ -173,3 +173,5 @@ cython_debug/
 
 # gfpgan downloaded weights
 /gfpgan/
+
+.gitignore
