@@ -121,8 +121,8 @@ def arguments():
         "--sampler",
         type=str,
         help="sampler (Default: plms)",
-        choices=["ddim", "plms"],
-        default="plms"
+        choices=["ddim", "plms","heun", "euler", "euler_a", "dpm2", "dpm2_a", "lms"],
+        default="plms",
     )
     parser.add_argument(
         "--skip_log",
