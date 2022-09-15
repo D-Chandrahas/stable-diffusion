@@ -22,7 +22,10 @@ from ldm.util import exists, default, instantiate_from_config
 from ldm.modules.diffusionmodules.util import make_beta_schedule
 from ldm.modules.diffusionmodules.util import make_ddim_sampling_parameters, make_ddim_timesteps, noise_like
 from ldm.modules.diffusionmodules.util import make_beta_schedule, extract_into_tensor, noise_like
-from samplers import CompVisDenoiser, get_ancestral_step, to_d, append_dims,linear_multistep_coeff
+# from samplers import CompVisDenoiser, get_ancestral_step, to_d, append_dims,linear_multistep_coeff
+from k_diffusion.external import CompVisDenoiser
+from k_diffusion.utils import append_dims
+from k_diffusion.sampling import get_ancestral_step, to_d, linear_multistep_coeff
 
 def disabled_train(self):
     """Overwrite model.train with this function to make sure train/eval mode
@@ -140,7 +143,7 @@ class FirstStage(DDPM):
         self.instantiate_first_stage(first_stage_config)
         self.cond_stage_forward = cond_stage_forward
         self.clip_denoised = False
-        self.bbox_tokenizer = None  
+        self.bbox_tokenizer = None
 
         self.restarted_from_ckpt = False
         if ckpt_path is not None:
@@ -262,7 +265,7 @@ class CondStage(DDPM):
         self.instantiate_cond_stage(cond_stage_config)
         self.cond_stage_forward = cond_stage_forward
         self.clip_denoised = False
-        self.bbox_tokenizer = None  
+        self.bbox_tokenizer = None
 
         self.restarted_from_ckpt = False
         if ckpt_path is not None:
@@ -358,7 +361,7 @@ class UNet(DDPM):
             self.register_buffer('scale_factor', torch.tensor(scale_factor))
         self.cond_stage_forward = cond_stage_forward
         self.clip_denoised = False
-        self.bbox_tokenizer = None  
+        self.bbox_tokenizer = None
         self.model1 = DiffusionWrapper(self.unetConfigEncode)
         self.model2 = DiffusionWrapperOut(self.unetConfigDecode)
         self.model1.eval()
@@ -469,7 +472,7 @@ class UNet(DDPM):
                conditioning,
                x0=None,
                shape = None,
-               seed=1234, 
+               seed=1234,
                callback=None,
                img_callback=None,
                quantize_x0=False,
@@ -719,7 +722,7 @@ class UNet(DDPM):
         x0 = init_latent
         for i, step in enumerate(iterator):
             index = total_steps - i - 1
-            ts = torch.full((x_latent.shape[0],), step, device=x_latent.device, dtype=torch.long)            
+            ts = torch.full((x_latent.shape[0],), step, device=x_latent.device, dtype=torch.long)
 
             if mask is not None:
                 # x0_noisy = self.add_noise(mask, torch.tensor([index] * x0.shape[0]).to(self.cdevice))
