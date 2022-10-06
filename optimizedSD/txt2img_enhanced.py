@@ -1,4 +1,5 @@
 import argparse, os, re
+from unittest.mock import DEFAULT
 import torch
 import numpy as np
 from random import randint
@@ -122,7 +123,13 @@ def arguments():
         type=str,
         help="sampler (Default: plms)",
         choices=["ddim", "plms","heun", "euler", "euler_a", "dpm2", "dpm2_a", "lms"],
-        default="plms",
+        default="plms"
+    )
+    parser.add_argument(
+        "--ckpt",
+        type=str,
+        help="path to checkpoint of model",
+        default="models/ldm/stable-diffusion-v1/model.ckpt"
     )
     parser.add_argument(
         "--skip_log",
@@ -214,7 +221,11 @@ def optimised_txt2img(opt):
     # Credit: https://github.com/basujindal
 
     config = "optimizedSD/v1-inference.yaml"
-    ckpt = "models/ldm/stable-diffusion-v1/model.ckpt"
+
+    DEFAULT_CKPT = "models/ldm/stable-diffusion-v1/model.ckpt"
+    # This variable is no longer used,
+    # to change default path of checkpoint,
+    # change the keyword argument `default` of `parser.add_argument("--ckpt",...)` in `arguments()`
 
     
     seed_everything(opt.seed)
@@ -223,7 +234,7 @@ def optimised_txt2img(opt):
     if not opt.skip_log:
         logger(vars(opt), log_csv = "logs/txt2img_logs.csv")
 
-    sd = load_model_from_config(f"{ckpt}")
+    sd = load_model_from_config(f"{opt.ckpt}")
     li, lo = [], []
     for key, value in sd.items():
         sp = key.split(".")
