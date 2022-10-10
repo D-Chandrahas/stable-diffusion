@@ -1,3 +1,4 @@
+###All modifications are in optimisedSD/txt2img_enhanced.py
 <h1 align="center">Optimized Stable Diffusion</h1>
 <p align="center">
     <img src="https://img.shields.io/github/last-commit/basujindal/stable-diffusion?logo=Python&logoColor=green&style=for-the-badge"/>
