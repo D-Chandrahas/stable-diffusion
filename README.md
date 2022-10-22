@@ -1,5 +1,5 @@
 ### All modifications are in optimisedSD/txt2img_enhanced.py
-### Please wait a few weeks for an updated readme
+#### Run `python3 optimizedSD/txt2img_enhanced.py --help` for help
 
 <h1 align="center">Optimized Stable Diffusion</h1>
 <p align="center">
