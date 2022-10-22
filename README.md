@@ -1,4 +1,5 @@
 ### All modifications are in optimisedSD/txt2img_enhanced.py
+### This fork provides integration with [GFPGAN](https://github.com/TencentARC/GFPGAN) and [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN) for facial restoration and image upscaling
 #### Run `python3 optimizedSD/txt2img_enhanced.py --help` for help
 
 <h1 align="center">Optimized Stable Diffusion</h1>
