@@ -96,7 +96,7 @@ def arguments():
         "--seed",
         type=int,
         default=None,
-        help="the seed (for reproducible sampling)"
+        help="the seed (for reproducible sampling), (Default: Random)"
     )
     parser.add_argument(
         "--unet_bs",
@@ -126,7 +126,7 @@ def arguments():
     parser.add_argument(
         "--ckpt",
         type=str,
-        help="path to checkpoint of model",
+        help="path to checkpoint of model (Default: models/ldm/stable-diffusion-v1/model.ckpt)",
         default="models/ldm/stable-diffusion-v1/model.ckpt"
     )
     parser.add_argument(
@@ -135,26 +135,21 @@ def arguments():
         help="Dosent log the command line arguments when this flag is used"
     )
     parser.add_argument(
-        "--fp32",
-        action="store_true",
-        help="Use full precision floats"
-    )
-    parser.add_argument(
         "--enhance_face",
         action="store_true",
-        help="Enhance faces using GFPGAN"
+        help="Repair and upscale faces using GFPGAN"
     )
     parser.add_argument(
         "--enhance_image",
         action="store_true",
-        help="Enhance image using RealESRGAN"
+        help="Upscale image using RealESRGAN"
     )
     parser.add_argument(
         '--upscale',
         type=int,
         choices=[2,4],
         default=2,
-        help='The final upsampling scale of the image. Default: 2'
+        help='The final upscaling factor of the image. (Default: 2)'
     )
 
     return parser.parse_args()
@@ -269,7 +264,7 @@ def optimised_txt2img(opt):
     modelFS.eval()
     del sd
 
-    if opt.device != "cpu" and not opt.fp32:
+    if opt.device != "cpu" and opt.precision == "autocast":
         model.half()
         modelCS.half()
 
@@ -425,7 +420,7 @@ if __name__ == "__main__":
             tile=400,
             tile_pad=10,
             pre_pad=0,
-            half=not args.fp32
+            half=(args.device != "cpu" and args.precision == "autocast"),
         )
     else:
         RealESRGAN = None
