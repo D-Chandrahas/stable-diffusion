@@ -1,3 +1,21 @@
+# Generated images
+/outputs/
+
+# src downloaded while building env
+/src/
+
+# logs
+/logs/
+
+# SD weights checkpoint
+/models/ldm/stable-diffusion-v1/
+
+# gfpgan downloaded weights
+/gfpgan/
+
+# upscale script for testing
+/optimizedSD/upscale.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -159,20 +177,3 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-# Generated images
-/outputs/
-
-# src downloaded while building env
-/src/
-
-# logs
-/logs/
-
-# SD weights checkpoint
-/models/ldm/stable-diffusion-v1/
-
-# gfpgan downloaded weights
-/gfpgan/
-
-# upscale script for testing
-/optimizedSD/upscale.py
