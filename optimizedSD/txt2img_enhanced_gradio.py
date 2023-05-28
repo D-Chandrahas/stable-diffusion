@@ -1,4 +1,3 @@
-from pyclbr import Class
 import gradio as gr
 import argparse, os, re
 import torch
@@ -473,6 +472,7 @@ class Arguments():
     def __init__(
             self,
             prompt,
+            outdir,
             ddim_steps,
             ddim_eta,
             n_iter,
@@ -496,6 +496,7 @@ class Arguments():
             upscale
     ):
         self.prompt = prompt
+        self.outdir = outdir
         self.ddim_steps = ddim_steps
         self.ddim_eta = ddim_eta
         self.n_iter = n_iter
@@ -518,15 +519,75 @@ class Arguments():
         self.enhance_image = enhance_image
         self.upscale = upscale
 
-def prepare_args_and_call_main(...):
-    args = Arguments(...)
+def prepare_args_and_call_main(
+        prompt,
+        guidance_scale,
+        Height,
+        Width,
+        ddim_steps,
+        ddim_eta,
+        samples,
+        iterations,
+        seed,
+        sampler,
+        enhance_face,
+        enhance_image,
+        upscale,
+        turbo,
+        output_folder,
+        device,
+        skip_log
+):
+    args = Arguments(
+        prompt,
+        output_folder,
+        ddim_steps,
+        ddim_eta,
+        iterations,
+        Height,
+        Width,
+        4,
+        8,
+        samples,
+        guidance_scale,
+        device,
+        False,
+        seed,
+        1,
+        turbo,
+        "autocast",
+        sampler,
+        "models/ldm/stable-diffusion-v1/model.ckpt",
+        skip_log,
+        enhance_face,
+        enhance_image,
+        upscale
+    )
     main(args)
 
 
 if __name__ == "__main__":
     demo = gr.Interface(
         fn=prepare_args_and_call_main,
-        inputs=[...],
-        outputs=[...]
+        inputs=[
+            gr.Textbox(),
+            gr.Slider(0, 50, value=7.5, step=0.1),
+            gr.Slider(64, 4096, value=512, step=64),
+            gr.Slider(64, 4096, value=512, step=64),
+            gr.Slider(1, 1000, value=50, step=1),
+            gr.Slider(0, 1, value=0.0, step=0.01),
+            gr.Slider(1, 100, value=1, step=1),
+            gr.Slider(1, 100, value=1, step=1),
+            gr.Number(precision=0, value=randint(0, 1000000)),
+            gr.Radio(["ddim", "plms","heun", "euler", "euler_a", "dpm2", "dpm2_a", "lms"], value="plms"),
+            gr.Checkbox(value=False),
+            gr.Checkbox(value=False),
+            gr.Radio([2, 4], value=2),
+            gr.Checkbox(value=False),
+            gr.Textbox(value="outputs/txt2img-samples"),
+            gr.Textbox(value="cuda"),
+            gr.Checkbox(value=False)
+        ],
+        outputs=[]
     )
     demo.launch()

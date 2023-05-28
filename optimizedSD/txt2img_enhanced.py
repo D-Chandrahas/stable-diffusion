@@ -26,7 +26,7 @@ def arguments():
     parser.add_argument(
         "--prompt", type=str, default="a painting of a virus monster playing guitar", help="the prompt to render"
     )
-    parser.add_argument("--outdir", type=str, help="dir to write results to (Default: outputs)", default="outputs")
+    parser.add_argument("--outdir", type=str, help="dir to write results to (Default: outputs/txt2img-samples)", default="outputs/txt2img-samples")
     parser.add_argument(
         "--ddim_steps",
         type=int,
