@@ -18,7 +18,7 @@ from transformers import logging
 from realesrgan import RealESRGANer
 from gfpgan import GFPGANer
 from basicsr.archs.rrdbnet_arch import RRDBNet
-from cv2 import imwrite,cvtColor,COLOR_RGB2BGR
+from cv2 import imwrite,cvtColor,COLOR_RGB2BGR,COLOR_BGR2RGB
 logging.set_verbosity_error()
 
 def arguments():
@@ -438,34 +438,53 @@ def main(args):
     else:
         GFPGAN = None
 
-    if(args.enhance_face):
-        for iter_images in all_images:
-            for prompt_path,prompt_images in zip(prompt_paths,iter_images):
-                for image in prompt_images:
+    all_final_images = []
+
+    for iter_images in all_images:
+        final_iter_images = []
+        for prompt_path,prompt_images in zip(prompt_paths,iter_images):
+            final_prompt_images = []
+            for image in prompt_images:
+
+                if(args.enhance_face):
                     _, _, output = GFPGAN.enhance(image, has_aligned=False, only_center_face=False, paste_back=True)
                     save_img(output,prompt_path,seed)
+                    final_prompt_images.append(output)
                     seed += 1
 
-    elif(args.enhance_image):
-        for iter_images in all_images:
-            for prompt_path,prompt_images in zip(prompt_paths,iter_images):
-                for image in prompt_images:
+                elif(args.enhance_image):
                     output, _ = RealESRGAN.enhance(image, outscale=args.upscale)
                     save_img(output,prompt_path,seed)
+                    final_prompt_images.append(output)
                     seed += 1
 
-    else:
-        for iter_images in all_images:
-            for prompt_path,prompt_images in zip(prompt_paths,iter_images):
-                for image in prompt_images:
+                else:
                     save_img(image,prompt_path,seed)
+                    final_prompt_images.append(image)
                     seed += 1
+
+            final_iter_images.append(final_prompt_images)
+        all_final_images.append(final_iter_images)
 
     toc = time.time()
 
     time_taken = (toc - tic) / 60.0
 
     print(f"\nSamples finished in {time_taken:.2f} minutes")
+
+    upscale_factor = args.upscale if (args.enhance_image or args.enhance_face) else 1
+
+    all_grid = np.zeros((args.n_iter * args.H * upscale_factor, args.n_samples * args.W * upscale_factor, 3), dtype=np.uint8)
+
+    for itr_idx in range(args.n_iter):
+        for prompt_idx in range(1):
+            for sample_idx in range(args.n_samples):
+                all_grid[itr_idx * args.H * upscale_factor : (itr_idx + 1) * args.H * upscale_factor,
+                         sample_idx * args.W * upscale_factor : (sample_idx + 1) * args.W * upscale_factor,
+                         :
+                        ] = all_final_images[itr_idx][prompt_idx][sample_idx]
+    
+    return cvtColor(all_grid, COLOR_BGR2RGB)
 
 
 class Arguments():
@@ -563,7 +582,7 @@ def prepare_args_and_call_main(
         enhance_image,
         upscale
     )
-    main(args)
+    return main(args)
 
 
 if __name__ == "__main__":
@@ -588,6 +607,8 @@ if __name__ == "__main__":
             gr.Textbox(value="cuda"),
             gr.Checkbox(value=False)
         ],
-        outputs=[]
+        outputs=[
+            "image"
+        ]
     )
     demo.launch()
