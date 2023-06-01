@@ -18,142 +18,10 @@ from transformers import logging
 from realesrgan import RealESRGANer
 from gfpgan import GFPGANer
 from basicsr.archs.rrdbnet_arch import RRDBNet
-from cv2 import imwrite,cvtColor,COLOR_RGB2BGR,COLOR_BGR2RGB
+from cv2 import imwrite,cvtColor,COLOR_RGB2BGR, COLOR_BGR2RGB
 logging.set_verbosity_error()
 
-def arguments():
-    parser = argparse.ArgumentParser()
 
-    parser.add_argument(
-        "--prompt", type=str, default="a painting of a virus monster playing guitar", help="the prompt to render"
-    )
-    parser.add_argument("--outdir", type=str, help="dir to write results to (Default: outputs)", default="outputs")
-    parser.add_argument(
-        "--ddim_steps",
-        type=int,
-        default=50,
-        help="number of ddim sampling steps (Default: 50)"
-    )
-    parser.add_argument(
-        "--ddim_eta",
-        type=float,
-        default=0.0,
-        help="ddim eta (eta=0.0 corresponds to deterministic sampling)"
-    )
-    parser.add_argument(
-        "--n_iter",
-        type=int,
-        default=1,
-        help="sample this often (Default: 1)"
-    )
-    parser.add_argument(
-        "--H",
-        type=int,
-        default=512,
-        help="image height, in pixel space (Default: 512)"
-    )
-    parser.add_argument(
-        "--W",
-        type=int,
-        default=512,
-        help="image width, in pixel space (Default: 512)"
-    )
-    parser.add_argument(
-        "--C",
-        type=int,
-        default=4,
-        help="latent channels (Default: 4)"
-    )
-    parser.add_argument(
-        "--f",
-        type=int,
-        default=8,
-        help="downsampling factor (Default: 8)"
-    )
-    parser.add_argument(
-        "--n_samples",
-        type=int,
-        default=1, ## changed from default value of 5
-        help="how many samples to produce for each given prompt. A.k.a. batch size (Default: 1)"
-    )
-    parser.add_argument(
-        "--scale",
-        type=float,
-        default=7.5,
-        help="unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty)) (Default: 7.5)"
-    )
-    parser.add_argument(
-        "--device",
-        type=str,
-        default="cuda",
-        help="specify GPU (cuda/cuda:0/cuda:1/...) (Default: cuda)"
-    )
-    parser.add_argument(
-        "--from_file", ## previously called --from-file
-        type=str,
-        help="if specified, load prompts from this file"
-    )
-    parser.add_argument(
-        "--seed",
-        type=int,
-        default=None,
-        help="the seed (for reproducible sampling), (Default: Random)"
-    )
-    parser.add_argument(
-        "--unet_bs",
-        type=int,
-        default=1,
-        help="Slightly reduces inference time at the expense of high VRAM (value > 1 not recommended ) (Default: 1)"
-    )
-    parser.add_argument(
-        "--turbo",
-        action="store_true",
-        help="Reduces inference time on the expense of 1GB VRAM"
-    )
-    parser.add_argument(
-        "--precision",
-        type=str,
-        help="evaluate at this precision (Default: autocast)",
-        choices=["full", "autocast"],
-        default="autocast"
-    )
-    parser.add_argument(
-        "--sampler",
-        type=str,
-        help="sampler (Default: plms)",
-        choices=["ddim", "plms","heun", "euler", "euler_a", "dpm2", "dpm2_a", "lms"],
-        default="plms"
-    )
-    parser.add_argument(
-        "--ckpt",
-        type=str,
-        help="path to checkpoint of model (Default: models/ldm/stable-diffusion-v1/model.ckpt)",
-        default="models/ldm/stable-diffusion-v1/model.ckpt"
-    )
-    parser.add_argument(
-        "--skip_log",
-        action="store_true",
-        help="Dosent log the command line arguments when this flag is used"
-    )
-    parser.add_argument(
-        "--enhance_face",
-        action="store_true",
-        help="Repair and upscale faces using GFPGAN"
-    )
-    parser.add_argument(
-        "--enhance_image",
-        action="store_true",
-        help="Upscale image using RealESRGAN"
-    )
-    parser.add_argument(
-        '--upscale',
-        type=int,
-        choices=[2,4],
-        default=2,
-        help='The final upscaling factor of the image. (Default: 2)'
-    )
-
-    return parser.parse_args()
 
 def make_folders(args):
 
@@ -216,17 +84,12 @@ def optimised_txt2img(opt):
 
     config = "optimizedSD/v1-inference.yaml"
 
-    DEFAULT_CKPT = "models/ldm/stable-diffusion-v1/model.ckpt"
-    # This variable is no longer used,
-    # to change default path of checkpoint,
-    # change the keyword argument `default` of `parser.add_argument("--ckpt",...)` in `arguments()`
-
     
     seed_everything(opt.seed)
 
     # Logging
     if not opt.skip_log:
-        logger(vars(opt), log_csv = "logs/txt2img_logs.csv")
+        logger(vars(opt), log_csv = "logs/txt2img_gradio_logs.csv")
 
     sd = load_model_from_config(f"{opt.ckpt}")
     li, lo = [], []
@@ -345,7 +208,6 @@ def optimised_txt2img(opt):
 
                     modelFS.to(opt.device)
 
-                    # print(samples_ddim.shape)
                     m=0
                     for i in range(batch_size):
 
@@ -355,16 +217,9 @@ def optimised_txt2img(opt):
                         x_sample = cvtColor(x_sample.astype(np.uint8),COLOR_RGB2BGR)
                         all_images[k][l][m] = x_sample
                         
-                        #----------------------------------------#
-                        # convert all images to format accepted by the GANs and save them in a 3d list(all_images)
-
-                        # Image.fromarray(x_sample.astype(np.uint8)).save(
-                        #     os.path.join(sample_path, "seed_" + str(opt.seed) + "_" + f"{base_count:05}.png")
-                        # )
                         seeds += str(opt.seed) + ","
                         opt.seed += 1
 
-                        #--------------------------------------#
                         m += 1
 
                     if opt.device != "cpu":
@@ -377,9 +232,6 @@ def optimised_txt2img(opt):
                 l += 1
             k += 1
             
-
-    
-
     
     return all_images
 
@@ -388,7 +240,6 @@ def main(args):
     
     tic = time.time()
 
-    # args = arguments()
 
     if args.seed == None:
         args.seed = randint(0, 1000000)
