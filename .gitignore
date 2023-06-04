@@ -1,5 +1,5 @@
-# my todo file
-/todo.txt
+# gradio flagged outputs
+/flagged/
 
 # Generated images
 /outputs/
@@ -11,7 +11,8 @@
 /logs/
 
 # SD weights checkpoint
-/models/ldm/stable-diffusion-v1/
+/models/ldm/stable-diffusion-v1/*
+*.ckpt
 
 # gfpgan downloaded weights
 /gfpgan/

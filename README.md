@@ -1,13 +1,8 @@
-### Note: All modifications are in optimisedSD/txt2img_enhanced.py
 ### This fork provides integration with [GFPGAN](https://github.com/TencentARC/GFPGAN) and [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN) for facial restoration and image upscaling
-### Run `python3 optimizedSD/txt2img_enhanced.py --help` for help
 
-<h1 align="center">Optimized Stable Diffusion</h1>
-<p align="center">
-    <img src="https://img.shields.io/github/last-commit/basujindal/stable-diffusion?logo=Python&logoColor=green&style=for-the-badge"/>
-        <img src="https://img.shields.io/github/issues/basujindal/stable-diffusion?logo=GitHub&style=for-the-badge"/>
-                <img src="https://img.shields.io/github/stars/basujindal/stable-diffusion?logo=GitHub&style=for-the-badge"/>
-</p>
+
+# Optimized Stable Diffusion
+
 
 This repo is a modified version of the Stable Diffusion repo, optimized to use less VRAM than the original by sacrificing inference speed.
 
@@ -16,20 +11,18 @@ To reduce the VRAM usage, the following opimizations are used:
 - the stable diffusion model is fragmented into four parts which are sent to the GPU only when needed. After the calculation is done, they are moved back to the CPU.
 - The attention calculation is done in parts.
 
-<h1 align="center">Installation</h1>
+# Installation
 
-Clone this repo and follow the same installation steps as the original (mainly creating the conda environment and placing the weights at the specified location).
+- Install Miniconda from [here](https://docs.conda.io/en/latest/miniconda.html). Skip this step if you already have `conda` installed.
+- Clone this repo. Ex: using `git clone https://github.com/D-Chandrahas/stable-diffusion.git`.
+- Download the weights (`sd-v1-4.ckpt`) from [here](https://huggingface.co/CompVis/stable-diffusion-v-1-4-original). (Might have to create an account and accept the T&C).
+- Move the `sd-v1-4.ckpt` file to the `stable-diffusion/models/ldm/stable-diffusion-v1/` folder and rename it to `model.ckpt`.
+- Open the terminal and navigate into the `stable-diffusion/` folder.
+- Create a conda environment using `conda env create -f environment.yaml`.
+- Activate the conda environment with `conda activate ldm`.
+ 
 
-Alternatively, if you prefer to use Docker, you can do the following:
-
-1. Install [Docker](https://docs.docker.com/engine/install/), [Docker Compose plugin](https://docs.docker.com/compose/install/), and [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
-2. Clone this repo to, e.g., `~/stable-diffusion`
-3. Put your downloaded `model.ckpt` file into `~/sd-data` (it's a relative path, you can change it in `docker-compose.yml`)
-4. `cd` into `~/stable-diffusion` and execute `docker compose up --build`
-
-This will launch gradio on port 7860 with txt2img. You can also use `docker compose run` to execute other Python scripts.
-
-<h1 align="center">Usage</h1>
+# Usage
 
 ## img2img
 
@@ -57,17 +50,19 @@ This will launch gradio on port 7860 with txt2img. You can also use `docker comp
 
 - The results are not yet perfect but can be improved by using a combination of prompt weighting, prompt engineering and testing out multiple values of the `--strength` argument.
 
-- _Suggestions to improve the inpainting algorithm are most welcome_.
 
-<h1 align="center">Using the Gradio GUI</h1>
+# Using the Gradio GUI
 
-- You can also use the built-in gradio interface for `img2img`, `txt2img` & `inpainting` instead of the command line interface. Activate the conda environment and install the latest version of gradio using `pip install gradio`,
+- You can also use the built-in gradio interface for `img2img`, `txt2img` & `inpainting` instead of the command line interface.
 
-- Run img2img using `python optimizedSD/img2img_gradio.py`, txt2img using `python optimizedSD/txt2img_gradio.py` and inpainting using `python optimizedSD/inpaint_gradio.py`.
+- Activate the conda environment and
+  - Run img2img using `python optimizedSD/img2img_gradio.py`,
+  - txt2img using `python optimizedSD/txt2img_gradio.py` and
+  - inpainting using `python optimizedSD/inpaint_gradio.py`.
 
 - img2img_gradio.py has a feature to crop input images. Look for the pen symbol in the image box after selecting the image.
 
-<h1 align="center">Arguments</h1>
+# Arguments
 
 ## `--seed`
 
@@ -95,7 +90,7 @@ This will launch gradio on port 7860 with txt2img. You can also use `docker comp
 
 **Height & width of the generated image.**
 
-- Both height and width should be a multiple of 64.
+- Both height and width should be a **multiple of 64**.
 
 ## `--turbo`
 
@@ -109,12 +104,6 @@ This will launch gradio on port 7860 with txt2img. You can also use `docker comp
 
 - Mixed Precision is enabled by default. If you don't have a GPU with tensor cores (any GTX 10 series card), you may not be able use mixed precision. Use the `--precision full` argument to disable it.
 
-## `--format png` or `--format jpg`
-
-**Output image format**
-
-- The default output format is `png`. While `png` is lossless, it takes up a lot of space (unless large portions of the image happen to be a single colour). Use lossy `jpg` to get smaller image file sizes.
-
 ## `--unet_bs`
 
 **Batch size for the unet model**
@@ -123,7 +112,25 @@ This will launch gradio on port 7860 with txt2img. You can also use `docker comp
 
 - Should generally be a multiple of 2x(n_samples)
 
-<h1 align="center">Weighted Prompts</h1>
+### `--scale` : unconditional guidance scale
+
+### `--ddim_steps` : number of ddim sampling steps
+
+### `--ddim_eta` : ddim eta (eta=0.0 corresponds to deterministic sampling)
+
+### `--device` : specify GPU (cuda/cuda:0/cuda:1/...) or cpu
+
+### `--outdir` : folder to save the output images to
+
+## arguments specific to txt2img
+
+### `--enhance_face` : use [GFPGAN](https://github.com/TencentARC/GFPGAN) to restore and upscale faces.
+
+### `--enhance_image` : use [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN) to upscale image. Can be used in combination with `--enhance_face`.
+
+### `--upscale` : The final upsampling scale of the image. Use with `--enhance_image` and/or `--enhance_face`. Value can be *2* or *4*.
+
+## Weighted Prompts
 
 - Prompts can also be weighted to put relative emphasis on certain words.
   eg. `--prompt tabby cat:0.25 white duck:0.75 hybrid`.

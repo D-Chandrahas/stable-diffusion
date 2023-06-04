@@ -404,6 +404,7 @@ def prepare_args_and_call_main(
         enhance_image,
         upscale,
         turbo,
+        precision,
         output_folder,
         device,
         skip_log
@@ -425,7 +426,7 @@ def prepare_args_and_call_main(
         seed,
         1,
         turbo,
-        "autocast",
+        precision,
         sampler,
         "models/ldm/stable-diffusion-v1/model.ckpt",
         skip_log,
@@ -454,6 +455,7 @@ if __name__ == "__main__":
             gr.Checkbox(value=False),
             gr.Radio([2, 4], value=2),
             gr.Checkbox(value=False),
+            gr.Radio(["autocast", "full"], value="autocast"),
             gr.Textbox(value="outputs/txt2img-samples"),
             gr.Textbox(value="cuda"),
             gr.Checkbox(value=False)
