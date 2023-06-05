@@ -1,7 +1,3 @@
-readme
-topics
-description
 docker files
-installation
 optimise model loading
 merge with basujindal's clean branch
