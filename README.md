@@ -40,7 +40,7 @@ To reduce the VRAM usage, the following opimizations are used:
 
 - For example, the following command will generate 10 512x512 images:
 
-`python optimizedSD/optimized_txt2img.py --prompt "Cyberpunk style image of a Tesla car reflection in rain" --H 512 --W 512 --seed 27 --n_iter 2 --n_samples 5 --ddim_steps 50`
+`python optimizedSD/txt2img_enhanced.py --prompt "Cyberpunk style image of a Tesla car reflection in rain" --H 512 --W 512 --seed 27 --n_iter 2 --n_samples 5 --ddim_steps 50`
 
 ## inpainting
 
@@ -53,11 +53,13 @@ To reduce the VRAM usage, the following opimizations are used:
 
 # Using the Gradio GUI
 
+![gradio-interface](assets/gradio.png)
+
 - You can also use the built-in gradio interface for `img2img`, `txt2img` & `inpainting` instead of the command line interface.
 
 - Activate the conda environment and
   - Run img2img using `python optimizedSD/img2img_gradio.py`,
-  - txt2img using `python optimizedSD/txt2img_gradio.py` and
+  - txt2img using `python optimizedSD/txt2img_enhanced_gradio.py` and
   - inpainting using `python optimizedSD/inpaint_gradio.py`.
 
 - img2img_gradio.py has a feature to crop input images. Look for the pen symbol in the image box after selecting the image.
@@ -126,9 +128,9 @@ To reduce the VRAM usage, the following opimizations are used:
 
 ### `--enhance_face` : use [GFPGAN](https://github.com/TencentARC/GFPGAN) to restore and upscale faces.
 
-### `--enhance_image` : use [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN) to upscale image. Can be used in combination with `--enhance_face`.
+### `--enhance_image` : use [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN) to upscale image. Can be used in combination with *--enhance_face*.
 
-### `--upscale` : The final upsampling scale of the image. Use with `--enhance_image` and/or `--enhance_face`. Value can be *2* or *4*.
+### `--upscale` : The final upsampling scale of the image. Use with *--enhance_image* and/or *--enhance_face*. Value can be *2* or *4*.
 
 ## Weighted Prompts
 
