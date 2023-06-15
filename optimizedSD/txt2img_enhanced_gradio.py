@@ -37,8 +37,7 @@ def make_folders(args):
 
     for prompt in prompts:
         folder_base_count = 0
-        ## make sure different prompts are stored in different folders
-        base_path = os.path.join(args.outdir, "_".join(re.split(":| ", prompt)))[:100] ## changed folder name size limit from 150 to 100
+        base_path = os.path.join(args.outdir, "_".join(re.split(":| ", prompt)))[:100]
         prompt_path = base_path
         while(os.path.exists(prompt_path)):
             with open(os.path.join(prompt_path, "prompt.txt"),'r') as f:
@@ -47,14 +46,12 @@ def make_folders(args):
                 else:
                     folder_base_count += 1
                     prompt_path = base_path + "_" + str(folder_base_count)
-        ##
 
         os.makedirs(prompt_path, exist_ok=True)
 
-        ## store the prompt in file
         with open(os.path.join(prompt_path, "prompt.txt"),'w') as f:
             f.write(prompt)
-        ##
+
         prompt_paths.append(prompt_path)
     
     return prompt_paths
@@ -80,7 +77,6 @@ def load_model_from_config(ckpt, verbose=False):
     return sd
 
 def optimised_txt2img(opt):
-    # Credit: https://github.com/basujindal
 
     config = "optimizedSD/v1-inference.yaml"
 
@@ -299,20 +295,16 @@ def main(args):
 
                 if(args.enhance_face):
                     _, _, output = GFPGAN.enhance(image, has_aligned=False, only_center_face=False, paste_back=True)
-                    save_img(output,prompt_path,seed)
-                    final_prompt_images.append(output)
-                    seed += 1
 
                 elif(args.enhance_image):
                     output, _ = RealESRGAN.enhance(image, outscale=args.upscale)
-                    save_img(output,prompt_path,seed)
-                    final_prompt_images.append(output)
-                    seed += 1
-
+                    
                 else:
-                    save_img(image,prompt_path,seed)
-                    final_prompt_images.append(image)
-                    seed += 1
+                    output = image
+
+                save_img(output,prompt_path,seed)
+                final_prompt_images.append(output)
+                seed += 1
 
             final_iter_images.append(final_prompt_images)
         all_final_images.append(final_iter_images)

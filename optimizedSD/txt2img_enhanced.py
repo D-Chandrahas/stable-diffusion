@@ -72,7 +72,7 @@ def arguments():
     parser.add_argument(
         "--n_samples",
         type=int,
-        default=1, ## changed from default value of 5
+        default=1,
         help="how many samples to produce for each given prompt. A.k.a. batch size (Default: 1)"
     )
     parser.add_argument(
@@ -88,7 +88,7 @@ def arguments():
         help="specify GPU (cuda/cuda:0/cuda:1/...) (Default: cuda)"
     )
     parser.add_argument(
-        "--from_file", ## previously called --from-file
+        "--from_file",
         type=str,
         help="if specified, load prompts from this file"
     )
@@ -168,8 +168,7 @@ def make_folders(args):
 
     for prompt in prompts:
         folder_base_count = 0
-        ## make sure different prompts are stored in different folders
-        base_path = os.path.join(args.outdir, "_".join(re.split(":| ", prompt)))[:100] ## changed folder name size limit from 150 to 100
+        base_path = os.path.join(args.outdir, "_".join(re.split(":| ", prompt)))[:100]
         prompt_path = base_path
         while(os.path.exists(prompt_path)):
             with open(os.path.join(prompt_path, "prompt.txt"),'r') as f:
@@ -178,14 +177,13 @@ def make_folders(args):
                 else:
                     folder_base_count += 1
                     prompt_path = base_path + "_" + str(folder_base_count)
-        ##
+        
 
         os.makedirs(prompt_path, exist_ok=True)
 
-        ## store the prompt in file
         with open(os.path.join(prompt_path, "prompt.txt"),'w') as f:
             f.write(prompt)
-        ##
+        
         prompt_paths.append(prompt_path)
     
     return prompt_paths
@@ -211,7 +209,6 @@ def load_model_from_config(ckpt, verbose=False):
     return sd
 
 def optimised_txt2img(opt):
-    # Credit: https://github.com/basujindal
 
     config = "optimizedSD/v1-inference.yaml"
 
@@ -344,7 +341,6 @@ def optimised_txt2img(opt):
 
                     modelFS.to(opt.device)
 
-                    # print(samples_ddim.shape)
                     m=0
                     for i in range(batch_size):
 
@@ -354,16 +350,9 @@ def optimised_txt2img(opt):
                         x_sample = cvtColor(x_sample.astype(np.uint8),COLOR_RGB2BGR)
                         all_images[k][l][m] = x_sample
                         
-                        #----------------------------------------#
-                        # convert all images to format accepted by the GANs and save them in a 3d list(all_images)
-
-                        # Image.fromarray(x_sample.astype(np.uint8)).save(
-                        #     os.path.join(sample_path, "seed_" + str(opt.seed) + "_" + f"{base_count:05}.png")
-                        # )
                         seeds += str(opt.seed) + ","
                         opt.seed += 1
 
-                        #--------------------------------------#
                         m += 1
 
                     if opt.device != "cpu":
@@ -437,28 +426,21 @@ if __name__ == "__main__":
     else:
         GFPGAN = None
 
-    if(args.enhance_face):
-        for iter_images in all_images:
-            for prompt_path,prompt_images in zip(prompt_paths,iter_images):
-                for image in prompt_images:
+    for iter_images in all_images:
+        for prompt_path,prompt_images in zip(prompt_paths,iter_images):
+            for image in prompt_images:
+
+                if(args.enhance_face):
                     _, _, output = GFPGAN.enhance(image, has_aligned=False, only_center_face=False, paste_back=True)
-                    save_img(output,prompt_path,seed)
-                    seed += 1
 
-    elif(args.enhance_image):
-        for iter_images in all_images:
-            for prompt_path,prompt_images in zip(prompt_paths,iter_images):
-                for image in prompt_images:
+                elif(args.enhance_image):
                     output, _ = RealESRGAN.enhance(image, outscale=args.upscale)
-                    save_img(output,prompt_path,seed)
-                    seed += 1
+                    
+                else:
+                    output = image
 
-    else:
-        for iter_images in all_images:
-            for prompt_path,prompt_images in zip(prompt_paths,iter_images):
-                for image in prompt_images:
-                    save_img(image,prompt_path,seed)
-                    seed += 1
+                save_img(output,prompt_path,seed)
+                seed += 1
 
     toc = time.time()
 
