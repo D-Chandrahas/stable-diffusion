@@ -20,6 +20,8 @@ To reduce the VRAM usage, the following opimizations are used:
 - Open the terminal and navigate into the `stable-diffusion/` folder.
 - Create a conda environment using `conda env create -f environment.yaml`.
 - Activate the conda environment with `conda activate ldm`.
+
+Or alternatively, you can run text-to-image in google colab using [`optimizedSD/txt2img_enhanced.ipynb`](optimizedSD/txt2img_enhanced.ipynb)
  
 
 # Usage
